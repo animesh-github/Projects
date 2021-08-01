@@ -36,7 +36,9 @@
          url: http://rpmfind.net/linux/epel/7/x86_64/Packages/p/python2-PyMySQL-0.9.3-1.el7.noarch.rpm
          dest: .
      - name: install PyMysql package
-       shell: 'rpm -ivh ./python2-PyMySQL-0.9.3-1.el7.noarch.rpm'
+       yum: 
+         name: ./python2-PyMySQL-0.9.3-1.el7.noarch.rpm
+         state: present
      - name: Configuring Firewall
        firewalld:
          port: '{{ item }}'
