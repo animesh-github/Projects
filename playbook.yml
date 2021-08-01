@@ -1,0 +1,78 @@
+---
+ - name: Deploying a LAMP stack for web hosting
+   gather_facts: false
+   become: yes
+   hosts: all
+   vars:
+     packages:
+       - firewalld
+       - mariadb-server
+       - httpd
+       - php
+       - php-mysql
+       - git
+     http_config_file: index.php
+     services:
+       - firewalld
+       - mariadb
+       - httpd
+     ports:
+       - 80/tcp
+       - 3306/tcp
+   tasks:
+     - name: Installing Packages
+       yum:
+         name: '{{ item }}'
+         state: present
+       with_items: '{{packages}}'
+     - name: Starting and Enabling services
+       service:
+         name: '{{ item }}'
+         state: restarted
+         enabled: yes
+       with_items: '{{services}}'
+     - name: Configuring Firewall
+       firewalld:
+         port: '{{ item }}'
+         zone: public
+         permanent: true
+         state: enabled
+       with_items: '{{ports}}'
+     - name: Reloading Firewall
+       shell: 'firewall-cmd --reload'
+     - name: Create a database user
+       mysql_user:
+         name: ecomuser
+         password: ecompassword
+         priv: '*.*:ALL'
+         state: present
+         login_user: root
+     - name: Deleting any pre-existing databatse
+       mysql_db:
+         name: ecomdb
+         state: absent
+         login_user: root
+     - name: Creating database "ecomdb"
+       mysql_db:
+         name: ecomdb
+         state: present
+         login_user: root
+     - name: Configuring Database
+       shell: 'mysql -u root < /home/ansadmin/ansible/db.sql'
+     - name: Downloading website from Git
+       git:
+         repo: https://github.com/kodekloudhub/learning-app-ecommerce.git
+         dest: /var/www/html/
+         clone: yes
+         force: yes
+     - name: Copying template
+       template:
+         src: ./httpd.j2
+         dest: /etc/httpd/conf/httpd.conf
+     - name: Modifying index.php to connect to database server
+       shell: "sed -i 's/172.20.1.101/localhost/g' /var/www/html/index.php"
+     - name: start service
+       service:
+         name: httpd
+         state: restarted
+         enabled: yes

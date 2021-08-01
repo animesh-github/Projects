@@ -1,0 +1,17 @@
+---
+ - name: DATABASE
+   hosts: localhost
+   tasks:          
+     - name: Create a database user
+       mysql_user:
+         name: ecomuser
+         password: ecompassword
+         priv: '*.*:ALL'
+         state: present
+         login_user: root
+     - name: Configuring database
+       mysql_db:
+         name: ecomdb
+         state: present
+         login_user: ecomuser
+         login_password: ecompassword
